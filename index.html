@@ -4056,7 +4056,7 @@ function translateTo(lang) {
         <div class="modal-content">
             <span class="modal-close" onclick="closeModal()">&times;</span>
             <div class="modal-img-wrap">
-                <img loading="lazy" decoding="async">
+                <img id="mImg" loading="lazy" decoding="async">
             </div>
             <div class="modal-details">
                 <div class="modal-id">
@@ -4110,180 +4110,76 @@ function translateTo(lang) {
 
 
 
-<!-- INTERACTION & BILINGUAL ENGINE -->
+
+
+
 <script>
 window.currentSiteLang = 'id';
 
-// Kamus istilah kartu galeri
-const dict = {
-  'id': {
-    'btnId': 'ID (Indonesia)',
-    'btnEn': 'EN (English)',
-    'searchPh': 'Cari judul, ID (ART-075), atau media...',
-    'softFile': 'Soft File',
-    'license': 'Lisensi',
-    'btnDm': '✉ DM',
-    'btnEmail': '✉ Email',
-    'btnDetail': '+ Detail...',
-    'orderPhysical': 'Beli Karya Fisik',
-    'orderDigital': 'Beli Lisensi / Cetak'
-  },
-  'en': {
-    'btnId': 'ID (Indonesia)',
-    'btnEn': 'EN (English)',
-    'searchPh': 'Search title, ID (ART-075), or medium...',
-    'softFile': 'Soft File',
-    'license': 'License',
-    'btnDm': '✉ DM',
-    'btnEmail': '✉ Email',
-    'btnDetail': '+ Details...',
-    'orderPhysical': 'Buy Original Art',
-    'orderDigital': 'Buy License / Print'
-  }
-};
-
-// Fungsi alih bahasa kartu dan modal
 function switchLanguage(lang) {
-  window.currentSiteLang = lang;
-  
-  // Highlight tombol aktif
-  document.querySelectorAll('button').forEach(btn => {
-    const t = btn.innerText.trim();
-    if (t.includes('ID (Indonesia)')) {
-      if (lang === 'id') { btn.classList.add('active'); btn.style.background='#2563eb'; btn.style.color='#fff'; }
-      else { btn.classList.remove('active'); btn.style.background='transparent'; btn.style.color='#aaa'; }
-    }
-    if (t.includes('EN (English)')) {
-      if (lang === 'en') { btn.classList.add('active'); btn.style.background='#2563eb'; btn.style.color='#fff'; }
-      else { btn.classList.remove('active'); btn.style.background='transparent'; btn.style.color='#aaa'; }
-    }
-  });
+    window.currentSiteLang = lang;
 
-  // Terjemahkan elemen di setiap kartu
-  if (typeof catalogData !== 'undefined' && Array.isArray(catalogData)) {
-    catalogData.forEach(item => {
-      const card = document.getElementById(item.ID);
-      if (!card) return;
-
-      // Terjemahkan kutipan (quote / statement di kartu)
-      const quoteEl = card.querySelector('.statement, .quote, blockquote, p[class*="quote"], p:has(em)');
-      if (quoteEl) {
-        if (lang === 'en') {
-          quoteEl.innerText = '"' + (item.artist_statement_en || item.artist_statement || '') + '"';
-        } else {
-          quoteEl.innerText = '"' + (item.artist_statement_id || item.artist_statement || '') + '"';
+    // 1. Highlight tombol
+    document.querySelectorAll('button').forEach(btn => {
+        const t = btn.innerText.trim();
+        if (t.includes('ID (Indonesia)')) {
+            if (lang === 'id') { btn.classList.add('active'); btn.style.background='#2563eb'; btn.style.color='#fff'; }
+            else { btn.classList.remove('active'); btn.style.background='transparent'; btn.style.color='#aaa'; }
         }
-      }
-
-      // Terjemahkan detail kuratorial pada modal jika sedang terbuka
-      if (typeof currentModalArtId !== 'undefined' && currentModalArtId === item.ID) {
-        const mSt = document.getElementById('mStatement');
-        const mCur = document.getElementById('mCuratorial');
-        if (mSt) mSt.innerText = '"' + (lang === 'en' ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement)) + '"';
-        if (mCur) mCur.innerText = lang === 'en' ? (item.deskripsi_kuratorial_en || item.deskripsi_kuratorial) : (item.deskripsi_kuratorial || item.deskripsi_kuratorial_en);
-      }
+        if (t.includes('EN (English)')) {
+            if (lang === 'en') { btn.classList.add('active'); btn.style.background='#2563eb'; btn.style.color='#fff'; }
+            else { btn.classList.remove('active'); btn.style.background='transparent'; btn.style.color='#aaa'; }
+        }
     });
-  }
 
-  // Terjemahkan teks placeholder input pencarian
-  const searchInput = document.querySelector('input[type="search"], input[placeholder*="Cari"], input[placeholder*="Search"]');
-  if (searchInput) searchInput.placeholder = dict[lang].searchPh;
-}
-
-// Fungsi Buka Modal yang aman dan responsif
-function openModal(artId, updateHash = true) {
-  let item = null;
-  if (typeof catalogData !== 'undefined' && Array.isArray(catalogData)) {
-    item = catalogData.find(x => (x.ID === artId || x.id === artId));
-  }
-
-  const card = document.getElementById(artId);
-  if (!item && !card) return;
-
-  window.currentModalArtId = artId;
-  const isEn = (window.currentSiteLang === 'en');
-
-  // Isi teks modal
-  const mId = document.getElementById('mId');
-  if (mId) mId.innerText = artId;
-
-  const titleText = item ? (item.Judul || item.judul || '') : (card.querySelector('h2, h3, .title')?.innerText || '');
-  const mTitle = document.getElementById('mTitle');
-  if (mTitle) mTitle.innerText = titleText;
-
-  const mYear = document.getElementById('mYear');
-  if (mYear && item) mYear.innerText = item.Tahun || item.tahun || '-';
-
-  const mMedia = document.getElementById('mMedia');
-  if (mMedia && item) mMedia.innerText = item.Media || item.media || '-';
-
-  const mSize = document.getElementById('mSize');
-  if (mSize && item) mSize.innerText = item.Ukuran || item.ukuran || '-';
-
-  // Gambar modal
-  const mImg = document.getElementById('mImg') || document.querySelector('#artModal img') || document.querySelector('.modal img');
-  if (mImg) {
-    if (item && item.web_image) {
-      mImg.src = 'images/' + item.web_image;
-    } else if (card) {
-      const cardImg = card.querySelector('img');
-      if (cardImg) mImg.src = cardImg.src;
+    // 2. Terjemahkan Teks Placeholder
+    const searchInput = document.querySelector('input[type="search"], input[placeholder*="Cari"], input[placeholder*="Search"]');
+    if (searchInput) {
+        searchInput.placeholder = (lang === 'en') ? 'Search title, ID (ART-075), or medium...' : 'Cari judul, ID (ART-075), atau media...';
     }
-  }
 
-  // Narasi kuratorial modal
-  const mSt = document.getElementById('mStatement');
-  if (mSt && item) {
-    const txt = isEn ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement);
-    mSt.innerText = '"' + (txt || '') + '"';
-  }
+    // 3. Terjemahkan seluruh kartu galeri
+    if (typeof catalogData !== 'undefined' && Array.isArray(catalogData)) {
+        catalogData.forEach(item => {
+            const card = document.getElementById('card-' + item.ID) || document.getElementById(item.ID);
+            if (!card) return;
 
-  const mCur = document.getElementById('mCuratorial');
-  if (mCur && item) {
-    const txt = isEn ? (item.deskripsi_kuratorial_en || item.deskripsi_kuratorial) : (item.deskripsi_kuratorial || item.deskripsi_kuratorial_en);
-    mCur.innerText = txt || '';
-  }
+            // Kutipan seniman pada kartu
+            const quoteEl = card.querySelector('.statement, .quote, blockquote, p:not(.art-spec)');
+            if (quoteEl && quoteEl.innerText.startsWith('"') || quoteEl && quoteEl.innerText.includes('Bagi saya') || quoteEl && quoteEl.innerText.includes('Dalam')) {
+                quoteEl.innerText = '"' + (lang === 'en' ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement)) + '"';
+            }
 
-  // Tampilkan Modal
-  const modalBox = document.getElementById('artModal') || document.getElementById('modal') || document.querySelector('.modal');
-  if (modalBox) {
-    modalBox.style.display = 'flex';
-  }
+            // Spek (media)
+            const specEl = card.querySelector('.art-spec');
+            if (specEl && item.Ukuran && item.Media) {
+                let mediaText = item.Media;
+                if (lang === 'en') {
+                    mediaText = mediaText.replace(/tinta di atas kertas/gi, 'Ink on paper')
+                                         .replace(/conte di atas kertas/gi, 'Conte on paper')
+                                         .replace(/acrylik di kanvas/gi, 'Acrylic on canvas')
+                                         .replace(/cat air di atas kertas/gi, 'Watercolor on paper');
+                }
+                specEl.innerHTML = item.Ukuran + ' &bull; ' + mediaText;
+            }
+        });
+    }
+
+    // 4. Jika modal sedang terbuka, perbarui isinya langsung
+    if (window.currentModalArtId) {
+        openModal(window.currentModalArtId, false);
+    }
 }
 
-function closeModal() {
-  const modalBox = document.getElementById('artModal') || document.getElementById('modal') || document.querySelector('.modal');
-  if (modalBox) modalBox.style.display = 'none';
-}
-
-// Inisialisasi event listener saat dokumen selesai dimuat
 document.addEventListener('DOMContentLoaded', function() {
-  // Sambungkan tombol ID dan EN
-  document.querySelectorAll('button').forEach(btn => {
-    const txt = btn.innerText.trim();
-    if (txt.includes('ID (Indonesia)')) {
-      btn.onclick = function() { switchLanguage('id'); };
-      btn.style.cursor = 'pointer';
-    }
-    if (txt.includes('EN (English)')) {
-      btn.onclick = function() { switchLanguage('en'); };
-      btn.style.cursor = 'pointer';
-    }
-  });
-
-  // Pastikan setiap kartu memiliki cursor pointer
-  document.querySelectorAll('.art-card').forEach(card => {
-    card.style.cursor = 'pointer';
-  });
-
-  // Tombol close modal
-  const closeBtn = document.querySelector('.close-modal, .modal-close, [onclick*="closeModal"]');
-  if (closeBtn) closeBtn.onclick = closeModal;
-
-  window.addEventListener('click', function(e) {
-    const modalBox = document.getElementById('artModal') || document.getElementById('modal');
-    if (e.target === modalBox) closeModal();
-  });
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.innerText.includes('ID (Indonesia)')) {
+            btn.onclick = function() { switchLanguage('id'); };
+        }
+        if (btn.innerText.includes('EN (English)')) {
+            btn.onclick = function() { switchLanguage('en'); };
+        }
+    });
 });
 </script>
 
