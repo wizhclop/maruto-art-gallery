@@ -4133,7 +4133,8 @@
             document.getElementById('mSize').innerText = item.Ukuran || item.ukuran || '-';
             
             const webImg = item.web_image || '';
-            document.getElementById('mImg').src = webImg ? ('images/' + webImg) : '';
+            const imgEl = document.getElementById('mImg') || document.querySelector('#artModal img') || document.querySelector('.modal img');
+    if (imgEl) { imgEl.src = webImg ? ('images/' + webImg) : ''; }
 
             document.getElementById('mStatement').innerText = '"' + (item.artist_statement_id || 'Refleksi artistik.') + '"';
             document.getElementById('mCuratorial').innerText = item.deskripsi_kuratorial || 'Belum ada catatan kuratorial rinci.';
