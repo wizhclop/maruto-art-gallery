@@ -597,7 +597,7 @@ function translateTo(lang) {
     <div class="top-nav">
         <div class="lang-switch">
             <button class="active">ID (Indonesia)</button>
-            <button onclick="setLanguage('en')">EN (English)</button>
+            <button onclick="switchLanguage('en')">EN (English)</button>
         </div>
     </div>
 
@@ -4223,5 +4223,73 @@ function translateTo(lang) {
     </script>
     <script src="modal_gallery.js"></script>
 <div id="google_translate_element" style="display:none;"></div>
+
+<script>
+let currentLang = 'id';
+
+const translations = {
+    'id': {
+        'title': 'KATALOG KARYA MARUTO SEPTRIONO',
+        'subtitle': 'Arsip Digital, Portofolio & Etalase Komersial Internasional',
+        'searchPlaceholder': 'Cari judul, ID (ART-075), atau media...',
+        'orderOriginal': 'Beli Karya Fisik',
+        'orderPrint': 'Beli Lisensi / Cetak',
+        'inquiry': 'Tanya Kurator',
+        'statementTitle': 'Pernyataan Seniman',
+        'curatorialTitle': 'Catatan Kuratorial'
+    },
+    'en': {
+        'title': 'MARUTO SEPTRIONO ART CATALOG',
+        'subtitle': 'Digital Archive, Portfolio & International Commercial Showcase',
+        'searchPlaceholder': 'Search title, ID (ART-075), or medium...',
+        'orderOriginal': 'Buy Original Art',
+        'orderPrint': 'Buy Print / License',
+        'inquiry': 'Inquire Curator',
+        'statementTitle': 'Artist Statement',
+        'curatorialTitle': 'Curatorial Notes'
+    }
+};
+
+function switchLanguage(lang) {
+    currentLang = lang;
+    
+    // 1. Perbarui status tombol aktif
+    const btnId = document.querySelector('button[onclick*="switchLanguage(\'id\')"], button:contains("ID")');
+    const btnEn = document.querySelector('button[onclick*="switchLanguage(\'en\')"], button:contains("EN")');
+    
+    document.querySelectorAll('button').forEach(btn => {
+        if (btn.innerText.trim().includes('ID')) {
+            btn.style.opacity = (lang === 'id') ? '1' : '0.6';
+            btn.style.fontWeight = (lang === 'id') ? 'bold' : 'normal';
+        }
+        if (btn.innerText.trim().includes('EN')) {
+            btn.style.opacity = (lang === 'en') ? '1' : '0.6';
+            btn.style.fontWeight = (lang === 'en') ? 'bold' : 'normal';
+        }
+    });
+
+    // 2. Jika ada Google Translate yang terpasang, sinkronkan
+    const combo = document.querySelector('.goog-te-combo');
+    if (combo) {
+        combo.value = lang;
+        combo.dispatchEvent(new Event('change'));
+    }
+}
+
+// Pasang event listener langsung ke semua elemen tombol bahasa
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('button, a').forEach(el => {
+        const txt = el.innerText.trim();
+        if (txt === 'EN' || txt.includes('EN (English)')) {
+            el.setAttribute('onclick', 'switchLanguage("en")');
+            el.style.cursor = 'pointer';
+        } else if (txt === 'ID' || txt.includes('ID (Indonesia)')) {
+            el.setAttribute('onclick', 'switchLanguage("id")');
+            el.style.cursor = 'pointer';
+        }
+    });
+});
+</script>
+
 </body>
 </html>
