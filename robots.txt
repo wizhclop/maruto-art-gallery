@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://maruto-art.vercel.app/sitemap.xml
