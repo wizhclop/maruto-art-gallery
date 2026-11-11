@@ -4103,23 +4103,14 @@ function translateTo(lang) {
     <footer>
         <p>&copy; 2026 Maruto Art Studio. Arsip Kuratorial & Portofolio Komersial Seniman.</p>
     </footer>
-
-    
-
-
-
-
-
-
-
-
 <script>
 window.currentSiteLang = 'id';
+window.currentModalArtId = '';
 
 function switchLanguage(lang) {
     window.currentSiteLang = lang;
 
-    // 1. Highlight tombol
+    // 1. Highlight tombol navbar
     document.querySelectorAll('button').forEach(btn => {
         const t = btn.innerText.trim();
         if (t.includes('ID (Indonesia)')) {
@@ -4132,7 +4123,7 @@ function switchLanguage(lang) {
         }
     });
 
-    // 2. Terjemahkan Teks Placeholder
+    // 2. Placeholder pencarian
     const searchInput = document.querySelector('input[type="search"], input[placeholder*="Cari"], input[placeholder*="Search"]');
     if (searchInput) {
         searchInput.placeholder = (lang === 'en') ? 'Search title, ID (ART-075), or medium...' : 'Cari judul, ID (ART-075), atau media...';
@@ -4144,13 +4135,14 @@ function switchLanguage(lang) {
             const card = document.getElementById('card-' + item.ID) || document.getElementById(item.ID);
             if (!card) return;
 
-            // Kutipan seniman pada kartu
-            const quoteEl = card.querySelector('.statement, .quote, blockquote, p:not(.art-spec)');
-            if (quoteEl && quoteEl.innerText.startsWith('"') || quoteEl && quoteEl.innerText.includes('Bagi saya') || quoteEl && quoteEl.innerText.includes('Dalam')) {
-                quoteEl.innerText = '"' + (lang === 'en' ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement)) + '"';
+            // Targetkan class .card-statement yang valid
+            const quoteEl = card.querySelector('.card-statement');
+            if (quoteEl) {
+                const text = (lang === 'en') ? (item.artist_statement_en || item.artist_statement || '') : (item.artist_statement_id || item.artist_statement || '');
+                quoteEl.innerText = text ? ('"' + text + '"') : '';
             }
 
-            // Spek (media)
+            // Media & Ukuran pada kartu
             const specEl = card.querySelector('.art-spec');
             if (specEl && item.Ukuran && item.Media) {
                 let mediaText = item.Media;
@@ -4165,20 +4157,103 @@ function switchLanguage(lang) {
         });
     }
 
-    // 4. Jika modal sedang terbuka, perbarui isinya langsung
+    // 4. Perbarui modal jika sedang terbuka
     if (window.currentModalArtId) {
         openModal(window.currentModalArtId, false);
     }
 }
 
+function openModal(artId, updateHash = true) {
+    if (typeof catalogData === 'undefined' || !Array.isArray(catalogData)) return;
+    const item = catalogData.find(x => (x.ID === artId || x.id === artId));
+    if (!item) return;
+
+    window.currentModalArtId = item.ID;
+    const isEn = (window.currentSiteLang === 'en');
+
+    const mId = document.getElementById('mId');
+    if (mId) mId.innerText = item.ID;
+
+    const mTitle = document.getElementById('mTitle');
+    if (mTitle) mTitle.innerText = item.Judul || '';
+
+    const mYear = document.getElementById('mYear');
+    if (mYear) mYear.innerText = item.Tahun || '-';
+
+    const mMedia = document.getElementById('mMedia');
+    if (mMedia) mMedia.innerText = item.Media || '-';
+
+    const mSize = document.getElementById('mSize');
+    if (mSize) mSize.innerText = item.Ukuran || '-';
+
+    // Gambar Modal
+    let imgEl = document.getElementById('mImg') || document.querySelector('.modal-img-wrap img');
+    if (imgEl) {
+        imgEl.id = 'mImg';
+        const webImg = item.web_image || '';
+        imgEl.src = webImg ? ('images/' + webImg) : '';
+        imgEl.alt = item.Judul || 'Karya Seni';
+    }
+
+    // Narasi Kuratorial Modal Dwibahasa
+    const mSt = document.getElementById('mStatement');
+    if (mSt) {
+        const stText = isEn ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement);
+        mSt.innerText = stText ? ('"' + stText + '"') : '';
+    }
+
+    const mCur = document.getElementById('mCuratorial');
+    if (mCur) {
+        const curText = isEn ? (item.deskripsi_kuratorial_en || item.deskripsi_kuratorial) : (item.deskripsi_kuratorial || item.deskripsi_kuratorial_en);
+        mCur.innerText = curText || '';
+    }
+
+    const mEmailBtn = document.getElementById('mEmailBtn');
+    if (mEmailBtn) {
+        mEmailBtn.href = 'mailto:kirimdoa@gmail.com?subject=Tanya Karya ' + item.ID + ' - ' + encodeURIComponent(item.Judul || '');
+    }
+
+    // Buka tampilan Modal
+    const modal = document.getElementById('artModal');
+    if (modal) {
+        modal.classList.add('active');
+        modal.style.display = 'flex';
+    }
+}
+
+function closeModal() {
+    const modal = document.getElementById('artModal');
+    if (modal) {
+        modal.classList.remove('active');
+        modal.style.display = 'none';
+    }
+}
+
+function closeModalOnOutside(e) {
+    if (e.target.id === 'artModal') {
+        closeModal();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
+    // Hubungkan tombol navigasi ID & EN
     document.querySelectorAll('button').forEach(btn => {
         if (btn.innerText.includes('ID (Indonesia)')) {
             btn.onclick = function() { switchLanguage('id'); };
+            btn.style.cursor = 'pointer';
         }
         if (btn.innerText.includes('EN (English)')) {
             btn.onclick = function() { switchLanguage('en'); };
+            btn.style.cursor = 'pointer';
         }
+    });
+
+    // Event listener tutup modal via tombol X atau ESC
+    const closeBtn = document.querySelector('.modal-close');
+    if (closeBtn) closeBtn.onclick = closeModal;
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeModal();
     });
 });
 </script>
