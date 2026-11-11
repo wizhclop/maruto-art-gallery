@@ -4107,16 +4107,21 @@ function translateTo(lang) {
     </footer>
 <script>
 <script>
-const catalogData = [];
-
 window.currentSiteLang = 'id';
 window.currentModalArtId = '';
 
-// Fungsi ganti bahasa (ID / EN)
+// Kamus terjemahan media & UI
+const mediaTranslations = {
+    'tinta di atas kertas': 'Ink on paper',
+    'conte di atas kertas': 'Conte on paper',
+    'acrylik di kanvas': 'Acrylic on canvas',
+    'cat air di atas kertas': 'Watercolor on paper'
+};
+
 function switchLanguage(lang) {
     window.currentSiteLang = lang;
-    
-    // Tombol aktif
+
+    // Toggle tombol header
     document.querySelectorAll('button').forEach(btn => {
         const txt = btn.innerText.trim();
         if (txt.includes('ID (Indonesia)')) {
@@ -4130,38 +4135,29 @@ function switchLanguage(lang) {
     });
 
     // Placeholder pencarian
-    const sInput = document.querySelector('input[type="search"], input[placeholder*="Cari"], input[placeholder*="Search"]');
-    if (sInput) {
-        sInput.placeholder = (lang === 'en') ? 'Search title, ID (ART-075), or medium...' : 'Cari judul, ID (ART-075), atau media...';
+    const searchInput = document.querySelector('input[type="search"], input[placeholder*="Cari"], input[placeholder*="Search"]');
+    if (searchInput) {
+        searchInput.placeholder = (lang === 'en') ? 'Search title, ID (ART-075), or medium...' : 'Cari judul, ID (ART-075), atau media...';
     }
 
-    // Update semua kartu di galeri
-    if (Array.isArray(catalogData)) {
-        catalogData.forEach(item => {
-            const card = document.getElementById('card-' + item.ID) || document.getElementById(item.ID);
-            if (!card) return;
-
-            // Update teks kutipan/pernyataan seniman pada kartu
-            const quoteEl = card.querySelector('.card-statement, blockquote, p:not(.art-spec)');
-            if (quoteEl) {
-                const st = (lang === 'en') ? (item.artist_statement_en || item.artist_statement || '') : (item.artist_statement_id || item.artist_statement || '');
-                quoteEl.innerText = st ? ('"' + st + '"') : '';
+    // Ubah teks spesifikasi media pada setiap kartu
+    document.querySelectorAll('.art-card').forEach(card => {
+        const metaEl = card.querySelector('.art-meta, .art-spec');
+        if (metaEl) {
+            let txt = metaEl.getAttribute('data-original-meta') || metaEl.innerHTML;
+            if (!metaEl.getAttribute('data-original-meta')) {
+                metaEl.setAttribute('data-original-meta', txt);
             }
-
-            // Update keterangan media
-            const specEl = card.querySelector('.art-spec');
-            if (specEl && item.Ukuran && item.Media) {
-                let m = item.Media;
-                if (lang === 'en') {
-                    m = m.replace(/tinta di atas kertas/gi, 'Ink on paper')
-                         .replace(/conte di atas kertas/gi, 'Conte on paper')
-                         .replace(/acrylik di kanvas/gi, 'Acrylic on canvas')
-                         .replace(/cat air di atas kertas/gi, 'Watercolor on paper');
+            if (lang === 'en') {
+                for (const [idm, enm] of Object.entries(mediaTranslations)) {
+                    txt = txt.replace(new RegExp(idm, 'gi'), enm);
                 }
-                specEl.innerHTML = item.Ukuran + ' &bull; ' + m;
+                metaEl.innerHTML = txt;
+            } else {
+                metaEl.innerHTML = metaEl.getAttribute('data-original-meta');
             }
-        });
-    }
+        }
+    });
 
     // Update modal jika terbuka
     if (window.currentModalArtId) {
@@ -4169,56 +4165,65 @@ function switchLanguage(lang) {
     }
 }
 
-// Fungsi Buka Modal
 function openModal(artId, updateHash = true) {
-    if (!catalogData || !Array.isArray(catalogData)) return;
-    const item = catalogData.find(x => (x.ID === artId || x.id === artId));
-    if (!item) return;
+    const card = document.getElementById(artId) || document.getElementById('card-' + artId);
+    if (!card) return;
 
-    window.currentModalArtId = item.ID;
-    const isEn = (window.currentSiteLang === 'en');
+    window.currentModalArtId = artId;
+
+    // Ekstrak data langsung dari elemen kartu
+    const titleEl = card.querySelector('.art-title');
+    const title = titleEl ? titleEl.innerText.trim() : '';
+
+    const imgEl = card.querySelector('.img-container img');
+    const imgSrc = imgEl ? imgEl.getAttribute('src') : '';
+
+    const idEl = card.querySelector('.art-id-badge, .badge-id');
+    const cardIdText = idEl ? idEl.innerText.trim() : artId;
+
+    const yearEl = card.querySelector('.year-badge, .badge-year');
+    const year = yearEl ? yearEl.innerText.trim() : '-';
+
+    const metaEl = card.querySelector('.art-meta, .art-spec');
+    const meta = metaEl ? metaEl.innerText.trim() : '-';
+
+    const stmtEl = card.querySelector('.stmt-text, .card-statement');
+    const stmt = stmtEl ? stmtEl.innerText.trim() : '';
+
+    // Isi ke elemen modal
+    const mImg = document.getElementById('mImg') || document.querySelector('.modal-img img, .modal-img-wrap img');
+    if (mImg) {
+        mImg.id = 'mImg';
+        mImg.src = imgSrc;
+        mImg.alt = title;
+        mImg.style.objectFit = 'contain';
+        mImg.style.background = '#000';
+    }
 
     const mId = document.getElementById('mId');
-    if (mId) mId.innerText = item.ID;
+    if (mId) mId.innerText = cardIdText;
 
     const mTitle = document.getElementById('mTitle');
-    if (mTitle) mTitle.innerText = item.Judul || '';
+    if (mTitle) mTitle.innerText = title;
 
     const mYear = document.getElementById('mYear');
-    if (mYear) mYear.innerText = item.Tahun || '-';
+    if (mYear) mYear.innerText = year;
 
     const mMedia = document.getElementById('mMedia');
-    if (mMedia) mMedia.innerText = item.Media || '-';
+    if (mMedia) mMedia.innerText = meta;
 
-    const mSize = document.getElementById('mSize');
-    if (mSize) mSize.innerText = item.Ukuran || '-';
+    const mStmt = document.getElementById('mStatement') || document.querySelector('.modal-statement');
+    if (mStmt) mStmt.innerText = stmt;
 
-    const imgEl = document.getElementById('mImg') || document.querySelector('.modal-img-wrap img');
-    if (imgEl) {
-        imgEl.id = 'mImg';
-        const webImg = item.web_image || '';
-        imgEl.src = webImg ? ('images/' + webImg) : '';
-        imgEl.alt = item.Judul || 'Karya Seni';
-        imgEl.style.objectFit = 'contain';
-    }
+    const mCur = document.getElementById('mCuratorial') || document.querySelector('.modal-curatorial');
+    if (mCur) mCur.innerText = stmt;
 
-    const mSt = document.getElementById('mStatement');
-    if (mSt) {
-        const txt = isEn ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement);
-        mSt.innerText = txt ? ('"' + txt + '"') : '';
-    }
-
-    const mCur = document.getElementById('mCuratorial');
-    if (mCur) {
-        const txt = isEn ? (item.deskripsi_kuratorial_en || item.deskripsi_kuratorial) : (item.deskripsi_kuratorial || item.deskripsi_kuratorial_en);
-        mCur.innerText = txt || '';
-    }
-
-    const mEmailBtn = document.getElementById('mEmailBtn');
+    const mEmailBtn = document.getElementById('mEmailBtn') || document.querySelector('.modal-actions a[href^="mailto:"]');
     if (mEmailBtn) {
-        mEmailBtn.href = 'mailto:kirimdoa@gmail.com?subject=Tanya Karya ' + item.ID + ' - ' + encodeURIComponent(item.Judul || '');
+        mEmailBtn.href = 'mailto:marutoseptriono@gmail.com?subject=Tanya%20Karya%20' + cardIdText + '%20' + encodeURIComponent(title);
     }
 
+    // Tampilkan Modal
     const modal = document.getElementById('artModal');
     if (modal) {
         modal.classList.add('active');
@@ -4226,11 +4231,10 @@ function openModal(artId, updateHash = true) {
     }
 
     if (updateHash && history.pushState) {
-        history.pushState(null, null, '#' + item.ID);
+        history.pushState(null, null, '#' + cardIdText);
     }
 }
 
-// Fungsi Tutup Modal
 function closeModal() {
     const modal = document.getElementById('artModal');
     if (modal) {
@@ -4242,13 +4246,6 @@ function closeModal() {
     }
 }
 
-function closeModalOnOutside(e) {
-    if (e.target && e.target.id === 'artModal') {
-        closeModal();
-    }
-}
-
-// Fungsi Salin Link Modal & Kartu
 function copyModalLink(artId) {
     const id = artId || window.currentModalArtId;
     if (!id) return;
@@ -4256,13 +4253,13 @@ function copyModalLink(artId) {
     navigator.clipboard.writeText(url).then(() => {
         alert('Tautan karya ' + id + ' berhasil disalin!');
     }).catch(() => {
-        prompt('Salin link karya:', url);
+        prompt('Salin tautan karya:', url);
     });
 }
 
-// Event Listeners Terpadu (Delegasi Klik)
+// Delegasi klik & event listener terpusat
 document.addEventListener('DOMContentLoaded', function() {
-    // Tombol ID / EN
+    // Tombol ID & EN
     document.querySelectorAll('button').forEach(btn => {
         const t = btn.innerText.trim();
         if (t.includes('ID (Indonesia)')) {
@@ -4275,41 +4272,51 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Delegasi klik kartu untuk buka modal
+    // Delegasi klik seluruh kartu
     document.addEventListener('click', function(e) {
-        // Cek klik tombol copy link kartu
-        const linkBtn = e.target.closest('.card-footer-link, button, a');
-        if (linkBtn && (linkBtn.innerText.includes('Link') || linkBtn.classList.contains('btn-copy-card'))) {
+        // Klik tombol copy link di kartu
+        const copyBtn = e.target.closest('.link-s, .btn-copy-card');
+        if (copyBtn) {
             e.stopPropagation();
-            const cardEl = e.target.closest('.art-card');
+            const cardEl = copyBtn.closest('.art-card');
             if (cardEl) {
-                const cid = cardEl.id.replace('card-', '');
-                copyModalLink(cid);
-                return;
+                copyModalLink(cardEl.id.replace('card-', ''));
             }
+            return;
         }
 
-        // Klik pada area kartu untuk membuka modal
+        // Jangan picu buka modal jika klik link luar / tombol email / DM
+        if (e.target.closest('a') || e.target.closest('button')) return;
+
+        // Klik pada area kartu atau teks kuratorial
         const cardTarget = e.target.closest('.art-card');
-        if (cardTarget && !e.target.closest('button') && !e.target.closest('a')) {
+        if (cardTarget) {
             const cardId = cardTarget.id.replace('card-', '');
             openModal(cardId);
         }
     });
 
-    // Tombol close modal
+    // Tombol X close modal
     const closeBtn = document.querySelector('.modal-close');
     if (closeBtn) closeBtn.onclick = closeModal;
 
-    // Tutup dengan ESC
+    // Tutup saat klik latar belakang gelap modal
+    const modal = document.getElementById('artModal');
+    if (modal) {
+        modal.onclick = function(e) {
+            if (e.target === modal) closeModal();
+        };
+    }
+
+    // Tombol ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') closeModal();
     });
 
-    // Periksa apakah URL memuat hash ID (misal #ART-078)
+    // Cek direct hash URL (misal: #ART-078)
     if (window.location.hash) {
-        const targetId = window.location.hash.replace('#', '');
-        setTimeout(() => { openModal(targetId); }, 300);
+        const hId = window.location.hash.replace('#', '');
+        setTimeout(() => { openModal(hId); }, 300);
     }
 });
 </script>
