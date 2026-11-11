@@ -156,7 +156,7 @@
         .img-container img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             transition: transform 0.4s ease;
         }
 
@@ -323,7 +323,12 @@
         }
 
         /* MODAL POPUP */
-        .modal {
+        
+.modal.active {
+    display: flex !important;
+}
+
+.modal {
             display: none;
             position: fixed;
             z-index: 9999;
@@ -4110,32 +4115,32 @@ window.currentModalArtId = '';
 function switchLanguage(lang) {
     window.currentSiteLang = lang;
 
-    // 1. Highlight tombol navbar
+    // Highlight tombol bahasa aktif
     document.querySelectorAll('button').forEach(btn => {
-        const t = btn.innerText.trim();
-        if (t.includes('ID (Indonesia)')) {
+        const txt = btn.innerText.trim();
+        if (txt.includes('ID (Indonesia)')) {
             if (lang === 'id') { btn.classList.add('active'); btn.style.background='#2563eb'; btn.style.color='#fff'; }
             else { btn.classList.remove('active'); btn.style.background='transparent'; btn.style.color='#aaa'; }
         }
-        if (t.includes('EN (English)')) {
+        if (txt.includes('EN (English)')) {
             if (lang === 'en') { btn.classList.add('active'); btn.style.background='#2563eb'; btn.style.color='#fff'; }
             else { btn.classList.remove('active'); btn.style.background='transparent'; btn.style.color='#aaa'; }
         }
     });
 
-    // 2. Placeholder pencarian
+    // Placeholder kolom pencarian
     const searchInput = document.querySelector('input[type="search"], input[placeholder*="Cari"], input[placeholder*="Search"]');
     if (searchInput) {
         searchInput.placeholder = (lang === 'en') ? 'Search title, ID (ART-075), or medium...' : 'Cari judul, ID (ART-075), atau media...';
     }
 
-    // 3. Terjemahkan seluruh kartu galeri
+    // Terjemahkan seluruh kartu di halaman
     if (typeof catalogData !== 'undefined' && Array.isArray(catalogData)) {
         catalogData.forEach(item => {
             const card = document.getElementById('card-' + item.ID) || document.getElementById(item.ID);
             if (!card) return;
 
-            // Targetkan class .card-statement yang valid
+            // Kutipan seniman pada kartu
             const quoteEl = card.querySelector('.card-statement');
             if (quoteEl) {
                 const text = (lang === 'en') ? (item.artist_statement_en || item.artist_statement || '') : (item.artist_statement_id || item.artist_statement || '');
@@ -4157,7 +4162,7 @@ function switchLanguage(lang) {
         });
     }
 
-    // 4. Perbarui modal jika sedang terbuka
+    // Sinkronkan modal jika sedang terbuka
     if (window.currentModalArtId) {
         openModal(window.currentModalArtId, false);
     }
@@ -4187,15 +4192,16 @@ function openModal(artId, updateHash = true) {
     if (mSize) mSize.innerText = item.Ukuran || '-';
 
     // Gambar Modal
-    let imgEl = document.getElementById('mImg') || document.querySelector('.modal-img-wrap img');
+    const imgEl = document.getElementById('mImg') || document.querySelector('.modal-img-wrap img');
     if (imgEl) {
         imgEl.id = 'mImg';
         const webImg = item.web_image || '';
         imgEl.src = webImg ? ('images/' + webImg) : '';
         imgEl.alt = item.Judul || 'Karya Seni';
+        imgEl.style.objectFit = 'contain';
     }
 
-    // Narasi Kuratorial Modal Dwibahasa
+    // Teks Narasi Modal
     const mSt = document.getElementById('mStatement');
     if (mSt) {
         const stText = isEn ? (item.artist_statement_en || item.artist_statement) : (item.artist_statement_id || item.artist_statement);
@@ -4213,11 +4219,11 @@ function openModal(artId, updateHash = true) {
         mEmailBtn.href = 'mailto:kirimdoa@gmail.com?subject=Tanya Karya ' + item.ID + ' - ' + encodeURIComponent(item.Judul || '');
     }
 
-    // Buka tampilan Modal
+    // Tampilkan Modal secara absolut
     const modal = document.getElementById('artModal');
     if (modal) {
         modal.classList.add('active');
-        modal.style.display = 'flex';
+        modal.style.setProperty('display', 'flex', 'important');
     }
 }
 
@@ -4225,7 +4231,7 @@ function closeModal() {
     const modal = document.getElementById('artModal');
     if (modal) {
         modal.classList.remove('active');
-        modal.style.display = 'none';
+        modal.style.setProperty('display', 'none', 'important');
     }
 }
 
@@ -4235,8 +4241,9 @@ function closeModalOnOutside(e) {
     }
 }
 
+// Pasang event listener saat DOM siap
 document.addEventListener('DOMContentLoaded', function() {
-    // Hubungkan tombol navigasi ID & EN
+    // Tombol ID / EN
     document.querySelectorAll('button').forEach(btn => {
         if (btn.innerText.includes('ID (Indonesia)')) {
             btn.onclick = function() { switchLanguage('id'); };
@@ -4248,7 +4255,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Event listener tutup modal via tombol X atau ESC
+    // Delegasi klik kartu agar semua kartu responsif seketika
+    document.addEventListener('click', function(e) {
+        const cardTarget = e.target.closest('.art-card');
+        if (cardTarget && !e.target.closest('button') && !e.target.closest('a')) {
+            const cardId = cardTarget.id.replace('card-', '');
+            openModal(cardId);
+        }
+    });
+
+    // Tombol close modal
     const closeBtn = document.querySelector('.modal-close');
     if (closeBtn) closeBtn.onclick = closeModal;
 
